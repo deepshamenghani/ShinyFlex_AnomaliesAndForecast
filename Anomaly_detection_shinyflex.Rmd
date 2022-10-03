@@ -259,7 +259,7 @@ renderValueBox({
   ungroup() %>% 
   summarise(scales::number(mean(weeklypurchase, na.rm=TRUE), big.mark=",")) %>% 
   pull(),
-    caption = "Avgx weekly purchases (after filtering)",
+    caption = "Avg weekly purchases (after filtering)",
     icon    =  "fa-money-check-alt",
     color   = "#0078D4"
     )
