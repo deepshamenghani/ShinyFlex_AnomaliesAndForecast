@@ -88,7 +88,6 @@ selectInput(
         selected = 0.05
 )
 
-hr()
 
 ```
 
@@ -97,14 +96,13 @@ hr()
 
 ___Note: This report is based on fake data and fake company name. All product names are made up. Any resemblance to anything fictional or otherwise is purely coincidental___
 
-<br>   
 <hr>
-<br>   
 
 ___Dashboard Author: Deepsha Menghani___       
 Portfolio: https://deepshamenghani.quarto.pub/dmenghani/    
 Github: https://github.com/deepshamenghani
-LinkedIn: https://www.linkedin.com/in/deepshamenghani/ 
+LinkedIn: https://www.linkedin.com/in/deepshamenghani/   
+Shiny Flexdashboard code: https://github.com/deepshamenghani/ShinyFlex_AnomaliesAndForecast
 
 ```{r}
 
