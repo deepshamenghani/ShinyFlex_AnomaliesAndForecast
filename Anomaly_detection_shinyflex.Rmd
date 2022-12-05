@@ -1,5 +1,5 @@
 ---
-title: "EverythingYouWillNeed.com Sales Report"
+title: "EverythingYouWillNeed.com Sales Anomalies Report"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -28,6 +28,8 @@ library(timetk)
 library(tidymodels)
 library(randomForest)
 library(glmnet)
+library(tinytex)
+library(shinycssloaders)
 
 ```
 
@@ -39,10 +41,22 @@ div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
 
 product_purchases <- read.csv("product_purchase_overtime.csv")
 
+first_purchase_date <- product_purchases %>%
+  mutate(Date = as.Date(Date)) %>% 
+  filter(purchase_count != 0) %>%
+  arrange(products, Date) %>% 
+  group_by(products) %>% 
+  mutate(mindate = min(Date)) %>% 
+  distinct(products, mindate) %>% 
+  ungroup()
+
 product_purchases <- product_purchases %>% 
   mutate(Date = as.Date(Date)) %>% 
   as_tibble() %>% 
-  select(products, Date, purchase_count)
+  select(products, Date, purchase_count) %>% 
+  left_join(first_purchase_date) %>% 
+  filter(Date >= mindate) %>% 
+  select(-mindate)
 
 ```
 
@@ -82,7 +96,7 @@ hr()
 
 selectInput(
         inputId  = "input_alpha",
-        label    = h3("Alpha (Sensitivity for anomaly detection)"),
+        label    = h3("Alpha (Sensitivity for IQR anomaly detection)"),
         choices  = seq(0.00, 1, by=0.01),
         multiple = FALSE,
         selected = 0.05
@@ -105,7 +119,6 @@ LinkedIn: https://www.linkedin.com/in/deepshamenghani/
 Shiny Flexdashboard code: https://github.com/deepshamenghani/ShinyFlex_AnomaliesAndForecast
 
 ```{r}
-
 products_distinct <- product_purchases %>% distinct(products)
 
 products_count_filtered <- eventReactive(
@@ -152,7 +165,9 @@ product_ts_tbl <- eventReactive(
   },
   ignoreNULL = FALSE
 )
+```
 
+```{r}
 calibration_forecast_tbl <- eventReactive(
   eventExpr = input$apply,
 
@@ -164,35 +179,15 @@ calibration_forecast_tbl <- eventReactive(
       set_engine("prophet", yearly.seasonality = FALSE) %>%
       fit(value ~ date, training(splits))
     
-    recipe_spec <- recipe(value ~ date, training(splits)) %>%
-      step_timeseries_signature(date) %>%
-      step_rm(contains("am.pm"), contains("hour"), contains("minute"),
-              contains("second"), contains("xts")) %>%
-      step_fourier(date, period = 365, K = 5) %>%
-      step_dummy(all_nominal())
-    
-    model_spec_rf <- rand_forest(trees = 500, min_n = 50) %>%
-      set_engine("randomForest", yearly.seasonality = FALSE)
-    
-    workflow_fit_rf <- workflow() %>%
-      add_model(model_spec_rf) %>%
-      add_recipe(recipe_spec %>% step_rm(date)) %>%
-      fit(training(splits))
-  
-    model_table <- modeltime_table(
-      model_fit_prophet,
-      workflow_fit_rf
-    )
-    
-    model_table %>%
+    model_fit_prophet %>%
       modeltime_calibrate(testing(splits))
   },
   ignoreNULL = FALSE
 )
 
 
-
 ```
+
 
 
 
@@ -202,25 +197,19 @@ Product Sales
 Column {data-width=350}
 -----------------------
 
-### ___About this Dashboard___
-
-<div class = "blue">   
-
-> This dashboard looks at data from _EverythingYouWillNeed.com_ website to report out on how many times a product was purchased by its customers. You can select the product, the dates to analyze and click on apply to replicate the report for the specific product choice and time period.
-
- - Forecast tab: This plot helps the stakeholders forecast product purchases in upcoming months.
- - Anomalies tab: This plot checks for anomalies so any upstream data issues can be reported. You can change alpha to increase or decrease the threshold of what is considered anomalous data.
-
-</div>
-<br>
-
 ### Products Purchase table filtered
 
 ```{r}
-DT::renderDataTable(products_count_filtered(),
-                    options = list(scrollX = TRUE,
-                                   scrollY = "250px",
-                                   pageLength = 10))
+DT::renderDataTable(products_count_filtered() %>% arrange(desc(Date)),
+                          extensions = 'Buttons',
+                          options = list(
+                                scrollX = TRUE,
+                                scrollY = "250px",
+                                pageLength = 100,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            )
+  )
 ```
 
 
@@ -233,7 +222,7 @@ renderValueBox({
     value   = products_count_filtered() %>%
       summarize(total_purchase = scales::number(sum(purchase_count, na.rm=TRUE), big.mark=",")) %>% 
       pull(total_purchase),
-    caption = "Total purchases (after filtering)",
+    caption = "Total product sales",
     icon    ="fa-heartbeat",
     color   = "info"
     )
@@ -257,7 +246,7 @@ renderValueBox({
   ungroup() %>% 
   summarise(scales::number(mean(weeklypurchase, na.rm=TRUE), big.mark=",")) %>% 
   pull(),
-    caption = "Avg weekly purchases (after filtering)",
+    caption = "Avg weekly sales",
     icon    =  "fa-money-check-alt",
     color   = "#0078D4"
     )
@@ -265,8 +254,6 @@ renderValueBox({
 })
 
 ```
-
-
 
 
 Column
@@ -277,60 +264,22 @@ Column
 ```{r}
 
 output$products_ts <- renderPlotly({
-
     g <- product_ts_tbl() %>%
       plot_time_series(date, value, .interactive = TRUE, .smooth = FALSE, .title = str_glue("Sales over time for {input$input_product}"))
-    
     ggplotly(g)
+    
 })
 
 plotlyOutput(outputId = "products_ts")
 
 ```
 
-Forecast Sales {data-orientation=columns}
+
+Forecast Sales {data-orientation=rows}
 =====================================
 
-Column 
+Row {data-height=980}
 -------------------------------------
-### Original time series plot
-
-```{r}
-output$products_ts_forecast <- renderPlotly({
-
-    g <- product_ts_tbl() %>%
-      plot_time_series(date, value, .interactive = TRUE, .smooth = FALSE, .title = str_glue("Sales over time for {input$input_product}"))
-    
-    ggplotly(g)
-})
-
-plotlyOutput(outputId = "products_ts_forecast")
-```
-
-### Forecast accuracy
-
-```{r}
-DT::renderDataTable(as.data.frame(calibration_forecast_tbl() %>%
-  modeltime_accuracy() %>%
-  table_modeltime_accuracy(.interactive = FALSE)),
-                    options = list(scrollX = TRUE,
-                                   scrollY = "250px",
-                                   pageLength = 10))
-```
-
-### ___About Forecasts tab___
-
-<div class = "blue">   
-
-> The forecasts were calculated using [modeltime](https://www.rdocumentation.org/packages/modeltime/versions/1.2.2) and [parsnip](https://www.rdocumentation.org/packages/parsnip/versions/1.0.2) packages that makes it extremely easy to plot and compare various forecast methods.    
-<br>   
-__Helpful Resource:__ To get started with an example of modeltime and parsnip, you can use this extremely handy and helpful [article by Business Science](https://www.business-science.io/code-tools/2020/06/29/introducing-modeltime.html).
-
-</div>
-<br>
-
-Column
------------------------
 
 
 ### Forecast plot
@@ -338,12 +287,12 @@ Column
 ```{r eval=TRUE}
 
 output$product_forecast_plot <- renderPlotly({
-
+    showModal(modalDialog("Calculating forecast", footer=NULL))
     g <- calibration_forecast_tbl() %>%
     modeltime_refit(product_ts_tbl() %>% filter(value !=0)) %>%
-      modeltime_forecast(h = "3 month", actual_data = product_ts_tbl()) %>%
-      plot_modeltime_forecast(.interactive = TRUE, .conf_interval_show = FALSE, .smooth = FALSE, .legend_show = TRUE, .color_lab = "Forcast method")
-
+      modeltime_forecast(h = "1 month", actual_data = product_ts_tbl()) %>%
+      plot_modeltime_forecast(.interactive = TRUE, .conf_interval_show = TRUE, .smooth = FALSE, .legend_show = TRUE, .color_lab = "Forcast method")
+  removeModal()
   ggplotly(g)
 })
 
@@ -352,18 +301,42 @@ plotlyOutput(outputId = "product_forecast_plot")
 ```
 
 
+Row 
+-------------------------------------
+
+### Forecast output
+
+```{r eval=TRUE}
+
+DT::renderDataTable(as.data.frame(calibration_forecast_tbl() %>%
+    modeltime_refit(product_ts_tbl() %>% filter(value !=0)) %>%
+      modeltime_forecast(h = "1 month", actual_data = product_ts_tbl()) %>% 
+      arrange(desc(.index))),
+                          extensions = 'Buttons',
+                          options = list(
+                                scrollX = TRUE,
+                                scrollY = "250px",
+                                pageLength = 100,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            )
+  )
+
+```
+
 Anomaly Detection {data-orientation=columns}
 =====================================
 
 Columns
 -----------------------
 
-
 ### Anomalies plot
+
+> Change alpha on the sidebar to increase or decrease the threshold of what is considered anomalous data
 
 ```{r}
 output$product_anomalies <- renderPlotly({
-
+    showModal(modalDialog("Calculating anomalies", footer=NULL))
     g <- product_decomposed_iqr() %>%
             plot_anomalies(time_recomposed = TRUE) +
             expand_limits(y = 0) +
@@ -376,31 +349,69 @@ output$product_anomalies <- renderPlotly({
             theme(
               axis.text.x = element_blank()
             )
-
+  removeModal()
   ggplotly(g)
 })
 
-plotlyOutput(outputId = "product_anomalies")
+plotlyOutput(outputId = "product_anomalies") 
 ```
+
+
+About this dashboard
+=====================================
+
+Column
+-----------------------
+
+### ___About this Dashboard___
+
+<div class = "blue">   
+
+> This dashboard looks at data from _EverythingYouWillNeed.com_ website to report out on how many times a product was purchased by its customers. You can select the product, the dates to analyze and click on apply to replicate the report for the specific product choice and time period.
+
+ - Forecast tab: This plot helps the stakeholders forecast product purchases in upcoming months.
+ - Anomalies tab: This plot checks for anomalies so any upstream data issues can be reported. You can change alpha to increase or decrease the threshold of what is considered anomalous data.
+ - Download tables: All the tables in this dashboard can be copied or downloaded to share with stakeholders.
+
+</div>
+<br>
 
 ### ___About Anomalies tab___
 
 <div class = "blue">   
 
-> The anomaly tab checks for anomalies to detect any upstream data issues or red signals in sales so the relevant business action can be takem. 
+> The anomaly tab checks for anomalies to detect any upstream data issues or red signals in sales so the relevant business action can be taken. 
 You can change alpha on the sidebar to increase or decrease the threshold of what is considered anomalous data.    
 <br>   
-__About "Anomalize" package__: The anomalize package helps decompose the time series into seasonality, trend and remainder. The anomalies are then calculated on the remainder. In this example I am using the Inter Quartile Range (IQR) method to detect anomalies. You can read examples about how this package is used to detect anomalies on the [anomalize documentation page by Business Science](https://www.rdocumentation.org/packages/anomalize/versions/0.2.2).  
+__About "Anomalize"__: The anomalize package helps decompose the time series into seasonality, trend and remainder. The anomalies are then calculated on the remainder. In this example I am using the Inter Quartile Range (IQR) method to detect anomalies. 
 
 </div>
 <br>
 
-Columns
+### ___About Forecasts tab___
+
+<div class = "blue">   
+
+> The forecasts were calculated using [modeltime](https://www.rdocumentation.org/packages/modeltime/versions/1.2.2) and [parsnip](https://www.rdocumentation.org/packages/parsnip/versions/1.0.2) packages that can be used to plot and compare various forecast methods. In this case "Prophet" was used to calculate monthly forecast.
+
+</div>
+<br>
+
+### ___Code___
+
+<div class = "blue">   
+
+> You can find the code to reproduce this report at the [github repository](https://github.com/deepshamenghani/ShinyFlex_AnomaliesAndForecast).
+
+</div>
+<br>
+
+
+
+Column
 -----------------------
 
-### Decomposed time series
-
-```{r}
+```{r eval=FALSE}
 output$decomposed_product_anomalies <- renderPlotly({
 
     g <- product_decomposed_iqr() %>%
@@ -420,3 +431,4 @@ output$decomposed_product_anomalies <- renderPlotly({
 plotlyOutput(outputId = "decomposed_product_anomalies")
 ```
 
+![Decomposed Time Series](decomposed_time_series.png){width=100%}
