@@ -1,0 +1,13 @@
+name: Sales_forecast_anomalies
+title: Sales_forecast_anomalies
+username:
+account: hzon6a-deepsha-menghani
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 7197940
+bundleId: 6599600
+url: https://hzon6a-deepsha-menghani.shinyapps.io/Sales_forecast_anomalies/
+when: 1670342018.1779
+lastSyncTime: 1670342018.17792
+asMultiple: FALSE
+asStatic: FALSE
