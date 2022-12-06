@@ -69,7 +69,7 @@ Sidebar {.sidebar}
 
 selectizeInput(
     inputId = "input_product",
-    label = h3("Select Your Poduct to get started"),
+    label = h3("Select Your Product and click on Apply to get started"),
     choices = unique(product_purchases$products),
     selected = "Silent Canary alarm",
     multiple = TRUE,
@@ -344,7 +344,7 @@ Columns
 
 ### Anomalies plot
 
-> Change alpha on the sidebar to increase or decrease the threshold of what is considered anomalous data
+> Change alpha on the sidebar and click on _"Apply"_ to increase or decrease the threshold of what is considered anomalous data
 
 ```{r}
 output$product_anomalies <- renderPlotly({
@@ -379,7 +379,7 @@ Column
 
 <div class = "blue">   
 
-> The anomaly tab checks for anomalies to detect any upstream data issues or red signals in sales so the relevant business action can be taken. 
+> The Anomaly tab checks for anomalies to detect any upstream data issues or red signals in sales so the relevant business action can be taken. 
 You can change alpha on the sidebar to increase or decrease the threshold of what is considered anomalous data.    
 <br>   
 __About "Anomalize"__: The anomalize package helps decompose the time series into seasonality, trend and remainder as shown in the image to the right. The anomalies are then calculated on the remainder. In this dashboard I am using the Inter Quartile Range (IQR) method to detect anomalies. 
@@ -391,7 +391,10 @@ __About "Anomalize"__: The anomalize package helps decompose the time series int
 
 <div class = "blue">   
 
-> The forecasts were calculated using [modeltime](https://www.rdocumentation.org/packages/modeltime/versions/1.2.2) and [parsnip](https://www.rdocumentation.org/packages/parsnip/versions/1.0.2) packages that can be used to plot and compare various forecast methods. In this case "Prophet" was used to calculate 1 month forecast.
+> The Forecast tab checks for seasonality and trend to forecast product sales. 
+The tabular form of the predicted sales can be copied or downloaded to share with stakeholders.    
+<br> 
+The forecasts were calculated using [modeltime](https://www.rdocumentation.org/packages/modeltime/versions/1.2.2) and [parsnip](https://www.rdocumentation.org/packages/parsnip/versions/1.0.2) packages that can be used to plot and compare various forecast methods. In this case "Prophet" was used to calculate 1 month forecast.
 
 </div>
 <br>
