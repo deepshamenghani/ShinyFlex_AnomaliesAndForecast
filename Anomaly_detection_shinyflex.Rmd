@@ -1,5 +1,5 @@
 ---
-title: "EverythingYouWillNeed.com Sales Anomalies Report"
+title: "EverythingYouWillNeed.com Sales Anomalies and Forecast Report"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -19,17 +19,9 @@ library(tidyverse)
 library(tidyquant)
 library(anomalize)
 library(plotly)
-library(tidyr)
-library(tibble)
-library(vctrs)
-library(lubridate)
 library(modeltime)
 library(timetk)
 library(tidymodels)
-library(randomForest)
-library(glmnet)
-library(tinytex)
-library(shinycssloaders)
 
 ```
 
@@ -78,8 +70,16 @@ selectizeInput(
 
 hr()
 
-actionButton(inputId = "apply", label = "Apply", icon = icon("play"))
+actionButton(inputId = "apply", label = "Apply", icon = icon("play"),  style="color: #fff; background-color: #337ab7; border-color: darkblue")
 
+actionButton(inputId = "reset", label = "Reset", icon = icon("sync"),  style="color: #fff; background-color: #337ab7; border-color: darkgreen")
+```
+
+
+The Reset button will replace the chosen values with original selections. Once you have reset, click on apply to refresh the tabs.
+
+
+```{r}
 hr()
 
 dateRangeInput(
@@ -101,7 +101,37 @@ selectInput(
         selected = 0.05
 )
 
+hr()
+```
 
+
+
+```{r}
+
+
+observeEvent(eventExpr = input$reset, handlerExpr = {
+  
+  updateSelectizeInput(
+    session = session,
+    inputId = "input_product",
+    selected = "Silent Canary alarm"
+    )
+  
+  updateDateRangeInput(
+    session=session,
+    inputId = "date_range",
+    start = min(product_purchases$Date),
+    end = max(product_purchases$Date)
+  )
+  
+  updateSelectInput(
+    session = session,
+    inputId  = "input_alpha",
+    selected = 0.05
+    
+  )
+  
+})
 ```
 
 
