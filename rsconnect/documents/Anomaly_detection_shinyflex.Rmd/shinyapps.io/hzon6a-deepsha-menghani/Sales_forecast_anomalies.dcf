@@ -5,9 +5,9 @@ account: hzon6a-deepsha-menghani
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 7197940
-bundleId: 6600075
+bundleId: 6600126
 url: https://hzon6a-deepsha-menghani.shinyapps.io/Sales_forecast_anomalies/
-when: 1670347810.37336
-lastSyncTime: 1670347810.37339
+when: 1670348543.27546
+lastSyncTime: 1670348543.27548
 asMultiple: FALSE
 asStatic: FALSE

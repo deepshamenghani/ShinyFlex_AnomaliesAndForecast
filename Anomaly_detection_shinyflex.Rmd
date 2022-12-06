@@ -232,6 +232,7 @@ Column {data-width=350}
 
 > This dashboard looks at data from _EverythingYouWillNeed.com_ website to report out on daily product sales. You can select the product, the dates to analyze and click on apply to replicate the report for the specific product choice and time period.
 
+ - Product sales tab: This provides an overview of the product sales and Key Performance Indicators over time.   
  - Forecast tab: This plot helps the stakeholders forecast product sales in upcoming month.
  - Anomalies tab: This plot checks for anomalies so any upstream data issues can be reported. You can change alpha to increase or decrease the threshold of what is considered anomalous data.
  - Download tables: All the tables in this dashboard can be copied or downloaded to share with stakeholders including sales and forecast.
