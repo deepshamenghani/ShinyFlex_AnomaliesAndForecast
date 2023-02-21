@@ -4,10 +4,20 @@ output:
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
+    theme: 
+      version: 3
+      primary: "#008080"
+      navbar-bg: "#008080"
+      base_font: 
+        google: Prompt
+      heading_font:
+        google: Sen
+      code_font:
+        google: 
+          family: JetBrains Mono
+          local: false
 runtime: shiny
 ---
-
-
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
@@ -17,8 +27,8 @@ library(shinyjs)
 library(data.table)
 library(tidyverse)
 library(tidyquant)
-library(anomalize)
 library(plotly)
+library(anomalize)
 library(modeltime)
 library(timetk)
 library(tidymodels)
@@ -61,7 +71,7 @@ Sidebar {.sidebar}
 
 selectizeInput(
     inputId = "input_product",
-    label = h3("Select Your Product and click on Apply to get started"),
+    label = h5("Select Your Product and click on Apply to get started"),
     choices = unique(product_purchases$products),
     selected = "Silent Canary alarm",
     multiple = TRUE,
@@ -70,13 +80,11 @@ selectizeInput(
 
 hr()
 
-actionButton(inputId = "apply", label = "Apply", icon = icon("play"),  style="color: #fff; background-color: #337ab7; border-color: darkblue")
+actionButton(inputId = "apply", label = "Apply", icon = icon("play"),  style="color: #fff; background-color: #008080; border-color: #008080;")
 
-actionButton(inputId = "reset", label = "Reset", icon = icon("sync"),  style="color: #fff; background-color: #337ab7; border-color: darkgreen")
+actionButton(inputId = "reset", label = "Reset", icon = icon("sync"),  style="color: #fff; background-color: #008080; border-color: #008080")
 ```
 
-
-The Reset button will replace the chosen values with original selections. Once you have reset, click on apply to refresh the tabs.
 
 
 ```{r}
@@ -84,7 +92,7 @@ hr()
 
 dateRangeInput(
     inputId = "date_range",
-    label = h3("Input Date Range"),
+    label = h5("Input Date Range"),
     start = min(product_purchases$Date),
     end = max(product_purchases$Date),
     min = min(product_purchases$Date),
@@ -95,7 +103,7 @@ hr()
 
 selectInput(
         inputId  = "input_alpha",
-        label    = h3("Alpha (Sensitivity for IQR anomaly detection)"),
+        label    = h5("Alpha (Sensitivity for IQR anomaly detection)"),
         choices  = seq(0.00, 1, by=0.01),
         multiple = FALSE,
         selected = 0.05
@@ -135,17 +143,14 @@ observeEvent(eventExpr = input$reset, handlerExpr = {
 ```
 
 
-<hr>   
+<hr>  
+<br>
+<br>
 
 ___Note: This report is based on fake data and fake company name. All product names are made up. Any resemblance to anything fictional or otherwise is purely coincidental___
 
 <hr>
 
-___Dashboard Author: Deepsha Menghani___       
-Portfolio: https://deepshamenghani.quarto.pub/dmenghani/    
-Github: https://github.com/deepshamenghani
-LinkedIn: https://www.linkedin.com/in/deepshamenghani/   
-Shiny Flexdashboard code: https://github.com/deepshamenghani/ShinyFlex_AnomaliesAndForecast
 
 ```{r}
 products_distinct <- product_purchases %>% distinct(products)
@@ -223,38 +228,27 @@ calibration_forecast_tbl <- eventReactive(
 Product Sales
 =====================================
 
-Column {data-width=350}
+Column
 -----------------------
 
-### ___About this Dashboard___
-
-<div class = "blue">   
-
-> This dashboard looks at data from _EverythingYouWillNeed.com_ website to report out on daily product sales. You can select the product, the dates to analyze and click on apply to replicate the report for the specific product choice and time period.
-
- - Product sales tab: This provides an overview of the product sales and Key Performance Indicators over time.   
- - Forecast tab: This plot helps the stakeholders forecast product sales in upcoming month.
- - Anomalies tab: This plot checks for anomalies so any upstream data issues can be reported. You can change alpha to increase or decrease the threshold of what is considered anomalous data.
- - Download tables: All the tables in this dashboard can be copied or downloaded to share with stakeholders including sales and forecast.
-
-</div>
-<br>
-
-### Products Purchase table filtered
+### 
 
 ```{r}
-DT::renderDataTable(products_count_filtered() %>% arrange(desc(Date)),
-                          extensions = 'Buttons',
-                          options = list(
-                                scrollX = TRUE,
-                                scrollY = "250px",
-                                pageLength = 100,
-                                dom = 'tB',
-                                buttons = c('copy', 'csv', 'excel')
-                            )
-  )
+
+output$products_ts <- renderPlotly({
+    g <- product_ts_tbl() %>%
+      plot_time_series(date, value, .interactive = TRUE, .smooth = FALSE, .title = str_glue("Sales over time")) 
+    ggplotly(g)
+    
+})
+
+plotlyOutput(outputId = "products_ts")
+
 ```
 
+
+Column {data-width=350}
+-----------------------
 
 ### Total purchase count for filtered data
 
@@ -266,8 +260,7 @@ renderValueBox({
       summarize(total_purchase = scales::number(sum(purchase_count, na.rm=TRUE), big.mark=",")) %>% 
       pull(total_purchase),
     caption = "Total product sales",
-    icon    ="fa-heartbeat",
-    color   = "info"
+    color   = "rgba(0,128,128,0.2)"
     )
 })
 
@@ -290,32 +283,36 @@ renderValueBox({
   summarise(scales::number(mean(weeklypurchase, na.rm=TRUE), big.mark=",")) %>% 
   pull(),
     caption = "Avg weekly sales",
-    icon    =  "fa-money-check-alt",
-    color   = "#0078D4"
+    color   = "rgba(0,128,128,0.2)"
     )
 
 })
 
 ```
 
-
-Column
------------------------
-
-### Sales Data for the selected product
+### Products Purchase table filtered
 
 ```{r}
-
-output$products_ts <- renderPlotly({
-    g <- product_ts_tbl() %>%
-      plot_time_series(date, value, .interactive = TRUE, .smooth = FALSE, .title = str_glue("Sales over time for {input$input_product}"))
-    ggplotly(g)
-    
-})
-
-plotlyOutput(outputId = "products_ts")
-
+DT::renderDataTable(products_count_filtered() %>% arrange(desc(Date)),
+                          extensions = 'Buttons',
+                          options = list(
+                                scrollX = TRUE,
+                                scrollY = "250px",
+                                pageLength = 100,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            )
+  )
 ```
+
+
+
+
+
+
+<!-- > This dashboard looks at data from _EverythingYouWillNeed.com_ website to report out on daily product sales. You can select the product, the dates to analyze and click on apply to replicate the report for the specific product choice and time period. -->
+
+
 
 
 Forecast Sales {data-orientation=rows}
@@ -406,62 +403,20 @@ About this dashboard
 Column
 -----------------------
 
-### ___About Anomalies tab___
+### About this dashboard 
 
-<div class = "blue">   
+#### This dashboard looks at data from _EverythingYouWillNeed.com_ website to provide insights on daily product sales by allowing users to select a product, a time period, and see the corresponding sales data. The dashboard also includes a forecast tab and an anomalies tab that helps users to forecast future sales and identify any anomalies in upstream data.
 
-> The Anomaly tab checks for anomalies to detect any upstream data issues or red signals in sales so the relevant business action can be taken. 
-You can change alpha on the sidebar to increase or decrease the threshold of what is considered anomalous data.    
-<br>   
-__About "Anomalize"__: The anomalize package helps decompose the time series into seasonality, trend and remainder as shown in the image to the right. The anomalies are then calculated on the remainder. In this dashboard I am using the Inter Quartile Range (IQR) method to detect anomalies. 
+### About Product Sales tab
 
-</div>
-<br>
+#### The Product Sales tab provides an overview of the product sales and key performance indicators (KPIs) over time. It includes a table that shows the total sales of the selected product over time. The table and plot can be filtered based on the selected product and time period. Package used for this plot is  [timetk](https://business-science.github.io/timetk/). 
 
-### ___About Forecasts tab___
+### About Forecast Sales tab
 
-<div class = "blue">   
+#### The Forecast tab helps users to forecast future sales for the selected product. It includes a forecast plot that shows the predicted sales for the next month, and a table that provides the details of the forecast. Packages used for this plot are [modeltime](https://business-science.github.io/modeltime/), and [tidymodels](https://www.tidymodels.org/). The table can be downloaded in different formats like csv, and excel. 
 
-> The Forecast tab checks for seasonality and trend to forecast product sales. 
-The tabular form of the predicted sales can be copied or downloaded to share with stakeholders.    
-<br> 
-The forecasts were calculated using [modeltime](https://www.rdocumentation.org/packages/modeltime/versions/1.2.2) and [parsnip](https://www.rdocumentation.org/packages/parsnip/versions/1.0.2) packages that can be used to plot and compare various forecast methods. In this case "Prophet" was used to calculate 1 month forecast.
-
-</div>
-<br>
-
-### ___Code___
-
-<div class = "blue">   
-
-> You can find the code to reproduce this report at the [github repository](https://github.com/deepshamenghani/ShinyFlex_AnomaliesAndForecast).
-
-</div>
-<br>
+### About Anomalies tab
 
 
+#### The Anomalies tab checks for anomalies in the sales data for the selected product. It includes a time series plot that shows the sales data with anomalies highlighted. Package used for this plot is [anomalize](https://business-science.github.io/anomalize/). It can also be used to create a decomposed time series plot that shows the seasonality, trend, and remainder of the time series data. The alpha parameter can be changed to increase or decrease the threshold of what is considered anomalous data. 
 
-Column
------------------------
-
-```{r eval=FALSE}
-output$decomposed_product_anomalies <- renderPlotly({
-
-    g <- product_decomposed_iqr() %>%
-            plot_anomaly_decomposition() +
-            expand_limits(y = 0) +
-            scale_y_continuous(labels = scales::number_format(big.mark = ",")) +
-            labs(x = "", y = "Count") +
-            theme_tq() + theme(legend.position = "none") +
-            theme(
-              axis.text.x = element_blank()
-            ) #+
-            #scale_x_date(labels = product_dates())
-
-  ggplotly(g)
-})
-
-plotlyOutput(outputId = "decomposed_product_anomalies")
-```
-
-![Decomposed Time Series](decomposed_time_series.png){width=100%}
