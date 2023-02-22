@@ -72,10 +72,10 @@ This app was created by Deepsha Menghani. You can find more of her work on her [
 
 -   **timetk**: An R package for working with time series data in R.
 
-    -   [Link](<https://business-science.github.io/timetk/>)
+    -   [Link](https://business-science.github.io/timetk/)
 
 -   **tidymodels**: An R package for modeling and machine learning with tidy data principles.
 
-    -   [Link](<https://www.tidymodels.org/>)
+    -   [Link](https://www.tidymodels.org/)
 
 <img src="https://user-images.githubusercontent.com/46545400/193694905-25b316b3-8f1d-47a0-a1c6-4d0c070ed9ed.png" alt="image" width="956"/>
